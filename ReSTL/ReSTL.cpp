@@ -4,8 +4,18 @@
 
 namespace ReSTL{
 
+
+	template<class T>
+	class base_container{
+	public:
+		virtual T& operator[](int index) = 0;
+		virtual T const & operator[](int index) const = 0;
+		virtual int const size() const = 0;
+		virtual ~base_container(){};
+	};
+
 	template<typename T>
-	class Array{
+	class Array : public ReSTL::base_container<T>{
 	public:
 		typedef T* iterator;
 		Array() : size_(0)
@@ -16,6 +26,10 @@ namespace ReSTL{
 		Array(int size) : size_(size)
 		{
 			elements = new T[size_];
+		}
+
+		int const size() const override {
+			return size_;
 		}
 
 		T const & getAt(int index) const
@@ -33,11 +47,11 @@ namespace ReSTL{
 			elements[size] = value;
 		}
 
-		T const & operator[](int index) const{
+		T const & operator[](int index) const override{
 			return elements[index];
 		}
 
-		T& operator[](int index){
+		T& operator[](int index) override{
 			return elements[index];
 		}
 
@@ -159,6 +173,14 @@ namespace ReSTL{
 		}
 	}
 
+	template<typename TIterator, typename TValueType>
+	TIterator find(TIterator start, TIterator end, TValueType const & value){
+		for(;start != end; ++start){
+			if(*start == value) return start;
+		}
+		return end;
+	}
+
 	class type_printer{
 	public:
 
@@ -180,6 +202,13 @@ namespace ReSTL{
 	};
 }
 
+template<class T>
+void print_all(ReSTL::base_container<T>& container){
+	using namespace std;
+	for(int i = 0; i < container.size(); i++){
+		cout << "Index: " << i << " , value: " << container[i] << endl;
+	}
+}
 
 int main()
 {
@@ -211,6 +240,15 @@ int main()
 	cout << "The vector<int> instance has a max element value of: " << ReSTL::max_element<int>(array.begin(), array.end()) << "." <<endl;
 	cout << "The vector<int> instance has a total sum of: " << ReSTL::accumulate(array.begin(), array.end(), 0, [](int value){
 		return value; });
+	auto res = ReSTL::find(array2.begin(), array2.end(), 3);
+		if(res != array2.end()){
+			cout << "The vector<int> instance contains the value: " << *res << endl;
+		}
+
+
+	cout << "Template arguement deduction" << endl;
+
+	print_all(array2);
 
 	return 0;
 }

@@ -1,5 +1,5 @@
 
-#include "stdafx.h"
+
 #include <iostream>
 
 namespace ReSTL{
@@ -181,6 +181,14 @@ namespace ReSTL{
 		return end;
 	}
 
+    template<class TInputIterator, class TOutputIterator>
+    void copy_backwards(TInputIterator start, TInputIterator end, TOutputIterator result)
+    {
+        for(; end != start; ){
+            *(--result) = *--end;
+        }
+    }
+
 	class type_printer{
 	public:
 
@@ -249,6 +257,11 @@ int main()
 	cout << "Template arguement deduction" << endl;
 
 	print_all(array2);
+
+    auto array3 = ReSTL::Array<int>(5);
+    ReSTL::copy_backwards(array.begin(), array.end(), array3.end());
+
+    print_all(array3);
 
 	return 0;
 }

@@ -94,9 +94,73 @@ namespace ReSTL{
 			elements = new T[capacity_];
 		}
 
+		vector(vector const &other)
+		{
+			this->capacity_ = other.capacity();
+			this->size_ = other.size();
+			elements = nullptr;
+
+			if(empty()) return;
+
+			elements = new T[this->capacity()];
+			ReSTL::copy(other.elements, other.elements + other.size(), elements);
+		}
+
+		vector& operator = (vector const &other)
+		{
+
+			if(this == &other) 
+				return *this;
+
+			if(other.empty()){
+				delete[] elements;
+				size_ = 0;
+				capacity_ = 0;
+				return *this;
+			}
+
+			auto element_copy = new T[other.capacity()];
+			ReSTL::copy(other.elements, other.elements + other.size(), element_copy);
+
+			delete[] elements;
+			elements = element_copy;
+			size_ = other.size();
+			capacity_ = other.capacity();
+
+			return *this;
+		}
+
 		void push_back(T const & element){
 			allocate();
 			elements[size_++] = element;
+		}
+
+		T& at(int index){
+			return elements[index];
+		}
+
+		T const& at(int index) const{
+			return elements[index];
+		}
+
+		T& back(){
+			return elements[this->size() - 1];
+		}
+
+		T const& back() const{
+			return elements[this->size() - 1];
+		}
+
+		T& front(){
+			return elements[0];
+		}
+
+		T const& front() const{
+			return elements[0];
+		}
+
+		bool empty() const{
+			return this->size() == 0;
 		}
 
 		int const size() const{
@@ -114,27 +178,28 @@ namespace ReSTL{
 		iterator end(){
 			return elements + size_;
 		}
+
 		~vector(){
 			delete[] elements;
 		}
+
 	private:
 
-		void allocate(){
+		void allocate() throw()
+		{
+			if(this->size() >= this->capacity() ) {
 
-			if(capacity_ == 0){
-				auto temp = new T[1];
+				auto original_capacity = this->capacity();
+				auto recalculated_capacity = (original_capacity == 0) ? 1 : (original_capacity * 2);
+				auto temp = new T[recalculated_capacity];
+
+				if(original_capacity > 0){
+					ReSTL::copy(elements, elements + size_, temp);
+					delete[] elements;
+				}
+
 				elements = temp;
-				capacity_ = 1;
-				return;
-			}
-
-			if(size_ >= capacity_ ){
-
-				auto temp = new T[capacity_ * 2];
-				ReSTL::copy(elements, elements + size_, temp);
-				delete[] elements;
-				elements = temp;
-				capacity_ = capacity_ * 2;
+				capacity_ = recalculated_capacity;
 			}
 		}
 
@@ -347,6 +412,11 @@ int main()
 		cout << "Print reversed vector<int> elements" << endl;
 		ReSTL::reverse(vect1.begin(), vect1.end());
 		ReSTL::foreach(vect1.begin(), vect1.end(), [](int value) { cout << value << endl; });
+
+		ReSTL::vector<int> vect2(vect1);
+		cout << "Print vect2 vector<int> elements" << endl;
+		ReSTL::foreach(vect2.begin(), vect2.end(), [](int value) { cout << value << endl; });
+
 		return 0;
 }
 

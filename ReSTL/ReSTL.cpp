@@ -259,6 +259,21 @@ namespace ReSTL{
 		return end;
 	}
 
+	template<class T> 
+	void swap(T& a, T& b){
+		using std::move;
+		auto temp = std::move(a);
+		a = std::move(b);
+		b = std::move(temp);
+	}
+
+	template<class TIterator>
+	void reverse(TIterator start, TIterator end){
+		while(start != --end){
+			swap(*start++, *end);
+		}
+	}
+
 	class type_printer{
 	public:
 
@@ -329,6 +344,9 @@ int main()
 		cout << "Print vector<int> elements" << endl;
 		ReSTL::foreach(vect1.begin(), vect1.end(), [](int value) { cout << value << endl; });
 
+		cout << "Print reversed vector<int> elements" << endl;
+		ReSTL::reverse(vect1.begin(), vect1.end());
+		ReSTL::foreach(vect1.begin(), vect1.end(), [](int value) { cout << value << endl; });
 		return 0;
 }
 

@@ -1,21 +1,31 @@
-
-
+#include "stdafx.h"
 #include <iostream>
 
 namespace ReSTL{
 
 
-	template<class T>
-	class base_container{
-	public:
-		virtual T& operator[](int index) = 0;
-		virtual T const & operator[](int index) const = 0;
-		virtual int const size() const = 0;
-		virtual ~base_container(){};
+	struct random_access_iterator_tag{};
+
+	template<typename iterator>
+	struct iterator_traits{
+		typedef typename iterator::iterator_category iterator_category;
+		typedef typename iterator::value_type value_type;
+		typedef typename iterator::difference_type difference_type;
+		typedef typename iterator::pointer pointer;
+		typedef typename iterator::reference reference;
+	};
+
+	template <class T>
+	struct iterator_traits<T*> {
+		typedef random_access_iterator_tag iterator_category;
+		typedef T value_type;
+		typedef ptrdiff_t difference_type;
+		typedef T* pointer;
+		typedef T& reference;
 	};
 
 	template<typename T>
-	class Array : public ReSTL::base_container<T>{
+	class Array {
 	public:
 		typedef T* iterator;
 		Array() : size_(0)
@@ -28,7 +38,7 @@ namespace ReSTL{
 			elements = new T[size_];
 		}
 
-		int const size() const override {
+		int const size() const {
 			return size_;
 		}
 
@@ -47,11 +57,11 @@ namespace ReSTL{
 			elements[size] = value;
 		}
 
-		T const & operator[](int index) const override{
+		T const & operator[](int index) const{
 			return elements[index];
 		}
 
-		T& operator[](int index) override{
+		T& operator[](int index){
 			return elements[index];
 		}
 
@@ -83,6 +93,20 @@ namespace ReSTL{
 		{
 			elements = new T[capacity_];
 		}
+
+		void push_back(T const & element){
+			allocate();
+			elements[size_++] = element;
+		}
+
+		int const size() const{
+			return size_;
+		}
+
+		int const capacity() const{
+			return capacity_;
+		}
+
 		iterator begin(){
 			return elements;
 		}
@@ -94,13 +118,33 @@ namespace ReSTL{
 			delete[] elements;
 		}
 	private:
+
+		void allocate(){
+
+			if(capacity_ == 0){
+				auto temp = new T[1];
+				elements = temp;
+				capacity_ = 1;
+				return;
+			}
+
+			if(size_ >= capacity_ ){
+
+				auto temp = new T[capacity_ * 2];
+				ReSTL::copy(elements, elements + size_, temp);
+				delete[] elements;
+				elements = temp;
+				capacity_ = capacity_ * 2;
+			}
+		}
+
 		T* elements;
 		int size_;
 		int capacity_;
 	};
 
-	template<typename TIterator, typename TValueType>
-	void fill(TIterator start, TIterator end, TValueType const & value){
+	template<typename TIterator>
+	void fill(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
 		for(;start != end; ++start){
 			*start = value;
 		}
@@ -122,10 +166,26 @@ namespace ReSTL{
 		return total;
 	}
 
-	template<typename TIterator, typename TValueType>
-	bool all_off(TIterator start, TIterator end, TValueType const & value){
+	template<typename TIterator>
+	bool all_off(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
 		for(;start != end; ++start){
 			if(*start != value) return false;
+		}
+		return true;
+	}
+
+	template<typename TIterator>
+	bool any_off(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
+		for(;start != end; ++start){
+			if(*start == value) return true;
+		}
+		return false;
+	}
+
+	template<typename TIterator>
+	bool none_off(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
+		for(;start != end; ++start){
+			if(*start == value) return false;
 		}
 		return true;
 	}
@@ -157,9 +217,9 @@ namespace ReSTL{
 		return max_elem;
 	}
 
-	template<typename TIterator, typename TValueType, typename TFunctor>
-	TValueType accumulate(TIterator start, TIterator end, TValueType const & default_value, TFunctor functor){
-		TValueType acc = default_value;
+	template<typename TIterator, typename TFunctor>
+	typename iterator_traits<TIterator>::value_type accumulate(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & default_value, TFunctor functor){
+		typename iterator_traits<TIterator>::value_type acc = default_value;
 		for(;start != end; ++start){
 			acc += functor(*start);
 		}
@@ -173,21 +233,31 @@ namespace ReSTL{
 		}
 	}
 
-	template<typename TIterator, typename TValueType>
-	TIterator find(TIterator start, TIterator end, TValueType const & value){
+	template<typename TIterator>
+	TIterator find(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
 		for(;start != end; ++start){
 			if(*start == value) return start;
 		}
 		return end;
 	}
 
-    template<class TInputIterator, class TOutputIterator>
-    void copy_backwards(TInputIterator start, TInputIterator end, TOutputIterator result)
-    {
-        for(; end != start; ){
-            *(--result) = *--end;
-        }
-    }
+	template<class TInputIterator, class TOutputIterator>
+	void copy_backwards(TInputIterator start, TInputIterator end, TOutputIterator result)
+	{
+		for(; end != start; ){
+			*(--result) = *--end;
+		}
+	}
+
+	template<typename TIterator>
+	TIterator find_if(TIterator start, TIterator end, typename iterator_traits<TIterator>::value_type const & value){
+		for(;start != end; ++start){
+			if(*start == value){
+				return start;
+			}
+		}
+		return end;
+	}
 
 	class type_printer{
 	public:
@@ -208,14 +278,6 @@ namespace ReSTL{
 	struct is_same<A,A>{
 		static const bool value = true;
 	};
-}
-
-template<class T>
-void print_all(ReSTL::base_container<T>& container){
-	using namespace std;
-	for(int i = 0; i < container.size(); i++){
-		cout << "Index: " << i << " , value: " << container[i] << endl;
-	}
 }
 
 
@@ -248,22 +310,25 @@ int main()
 	cout << "The vector<int> instance has a min element value of: " << ReSTL::min_element<int>(array.begin(), array.end()) << "." <<endl;
 	cout << "The vector<int> instance has a max element value of: " << ReSTL::max_element<int>(array.begin(), array.end()) << "." <<endl;
 	cout << "The vector<int> instance has a total sum of: " << ReSTL::accumulate(array.begin(), array.end(), 0, [](int value){
-		return value; });
-	auto res = ReSTL::find(array2.begin(), array2.end(), 3);
+		return value; }) << endl;
+		auto res = ReSTL::find(array2.begin(), array2.end(), 3);
 		if(res != array2.end()){
 			cout << "The vector<int> instance contains the value: " << *res << endl;
 		}
 
+		auto array3 = ReSTL::Array<int>(5);
+		ReSTL::copy_backwards(array.begin(), array.end(), array3.end());
 
-	cout << "Template arguement deduction" << endl;
+		ReSTL::vector<int> vect1;
+		vect1.push_back(1);
+		vect1.push_back(2);
+		vect1.push_back(3);
+		vect1.push_back(4);
+		vect1.push_back(5);
 
-	print_all(array2);
+		cout << "Print vector<int> elements" << endl;
+		ReSTL::foreach(vect1.begin(), vect1.end(), [](int value) { cout << value << endl; });
 
-    auto array3 = ReSTL::Array<int>(5);
-    ReSTL::copy_backwards(array.begin(), array.end(), array3.end());
-
-    print_all(array3);
-
-	return 0;
+		return 0;
 }
 

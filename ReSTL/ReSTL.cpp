@@ -143,6 +143,14 @@ namespace ReSTL{
 			return elements[index];
 		}
 
+		T& operator[](int index){
+			return elements[index];
+		}
+
+		T const& operator[](int index) const{
+			return elements[index];
+		}
+
 		T& back(){
 			return elements[this->size() - 1];
 		}

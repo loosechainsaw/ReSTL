@@ -167,6 +167,10 @@ namespace ReSTL{
 			return elements[0];
 		}
 
+		void pop_back(){
+
+		}
+
 		bool empty() const{
 			return this->size() == 0;
 		}
